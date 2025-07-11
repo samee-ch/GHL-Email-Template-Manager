@@ -4,24 +4,59 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GHL Template Manager (Browser Only)</title>
+  <title>GHL Template Manager</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background-color: #f9fafb;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .main-header {
+      text-align: center;
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 2rem;
+    }
+    label {
+      font-weight: 500;
+      color: #34495e;
+    }
+    .form-control {
+      border-radius: 0.5rem;
+    }
+    .btn {
+      border-radius: 0.5rem;
+    }
+    #results {
+      background: #ffffff;
+      padding: 1rem;
+      border-radius: 1rem;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    }
+    .badge {
+      font-size: 1rem;
+    }
+  </style>
 </head>
 
 <body>
   <div class="container py-5">
-    <h2 class="mb-4">📧 GHL Template Manager</h2>
+    <h1 class="main-header">📧 GHL Template Manager</h1>
 
-    <div class="row g-3 justify-content-end">
-      <div class="col-md-3">
-        <label for="locationId">Enter Subaccount ID</label>
+    <div class="row g-4 justify-content-center mb-4">
+      <div class="col-md-4">
+        <label for="locationId">Subaccount ID</label>
         <input type="text" id="locationId" class="form-control" placeholder="Location ID" required>
       </div>
       <div class="col-md-4">
-        <label>Enter Private Integration ID</label>
+        <label>Private Integration Key</label>
         <input type="text" id="authToken" class="form-control" placeholder="Integration Key" required>
       </div>
-      <div class="col-md-2">
+    </div>
+
+    <div class="row g-4 justify-content-center mb-4">
+      <div class="col-md-3">
         <label>Templates Limit</label>
         <input type="number" id="limit" class="form-control" placeholder="Limit" value="100">
       </div>
@@ -29,9 +64,11 @@
         <label>Delete Delay (sec)</label>
         <input type="number" id="delay" class="form-control" placeholder="Delay (sec)" value="2">
       </div>
-      <div class="col-md-2  d-flex align-items-end gap-2">
-        <button class="btn btn-primary" id="fetchBtn">Fetch</button>
-        <button id="clearBtn" class="btn btn-danger">Clear Data</button>
+      <div class="col-md-3 d-flex align-items-end gap-3">
+        <button class="btn btn-primary w-100" id="fetchBtn">Fetch Templates</button>
+      </div>
+      <div class="col-md-3 d-flex align-items-end">
+        <button id="clearBtn" class="btn btn-outline-danger w-100">Clear Data</button>
       </div>
     </div>
 
@@ -82,25 +119,27 @@
       `).join('');
 
       document.getElementById('results').innerHTML = `
-        <div class="d-flex gap-3">
+        <div class="d-flex flex-wrap gap-3 mb-3">
           <button class="btn btn-outline-danger" id="deleteSelected">🧹 Delete Selection (Memory)</button>
           <span id="totalCount" class="badge bg-secondary d-flex align-items-center">Total: ${templates.length}</span>
           <button class="btn btn-danger" id="deleteFromGHL">🚨 Delete from GHL</button>
           <span id="ghlDeleteCount" class="badge bg-danger d-flex align-items-center">GHL Deleted: ${ghlDeletedCount}</span>
         </div>
 
-        <table class="templatesTable table table-bordered table-striped mt-4">
-          <thead>
-            <tr>
-              <th><input type="checkbox" id="selectAll"></th>
-              <th>#</th>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Last Updated</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>`;
+        <div class="table-responsive">
+          <table class="templatesTable table table-bordered table-striped">
+            <thead class="table-light">
+              <tr>
+                <th><input type="checkbox" id="selectAll"></th>
+                <th>#</th>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Last Updated</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
 
       document.getElementById('selectAll').addEventListener('change', (e) => {
         document.querySelectorAll('.template-checkbox').forEach(cb => cb.checked = e.target.checked);
