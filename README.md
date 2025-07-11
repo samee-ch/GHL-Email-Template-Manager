@@ -67,5 +67,7 @@ GoHighLevel does not provide a bulk delete function for email templates. Agencie
 
 ---
 
-## 📂 File Structure
+## 📃 License
+
+MIT — Free to use and modify.
 
