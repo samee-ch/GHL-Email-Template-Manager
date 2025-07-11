@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GHL Template Manager (Browser Only)</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+
+<body>
+  <div class="container py-5">
+    <h2 class="mb-4">📧 GHL Template Manager</h2>
+
+    <div class="row g-3 justify-content-end">
+      <div class="col-md-3">
+        <label for="locationId">Enter Subaccount ID</label>
+        <input type="text" id="locationId" class="form-control" placeholder="Location ID" required>
+      </div>
+      <div class="col-md-4">
+        <label>Enter Private Integration ID</label>
+        <input type="text" id="authToken" class="form-control" placeholder="Integration Key" required>
+      </div>
+      <div class="col-md-2">
+        <label>Templates Limit</label>
+        <input type="number" id="limit" class="form-control" placeholder="Limit" value="100">
+      </div>
+      <div class="col-md-3">
+        <label>Delete Delay (sec)</label>
+        <input type="number" id="delay" class="form-control" placeholder="Delay (sec)" value="2">
+      </div>
+      <div class="col-md-2  d-flex align-items-end gap-2">
+        <button class="btn btn-primary" id="fetchBtn">Fetch</button>
+        <button id="clearBtn" class="btn btn-danger">Clear Data</button>
+      </div>
+    </div>
+
+    <div id="results" class="mt-4"></div>
+  </div>
+
+  <script>
+    let templates = [];
+    let ghlDeletedCount = 0;
+
+    document.getElementById('fetchBtn').addEventListener('click', async () => {
+      const locationId = document.getElementById('locationId').value.trim();
+      const authToken = document.getElementById('authToken').value.trim();
+      const limit = document.getElementById('limit').value.trim() || 100;
+
+      if (!locationId || !authToken) return alert('Please fill Location ID and Authorization Token.');
+
+      try {
+        const res = await fetch(`https://services.leadconnectorhq.com/emails/builder?locationId=${locationId}&limit=${limit}`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            Version: '2021-07-28',
+            Accept: 'application/json'
+          }
+        });
+
+        const data = await res.json();
+        templates = (data.builders || []);
+
+        if (!templates.length) return alert('No templates found.');
+        renderTable();
+      } catch (err) {
+        console.error(err);
+        alert('Failed to fetch templates. See console for details.');
+      }
+    });
+
+    function renderTable() {
+      const rows = templates.map((t, i) => `
+        <tr>
+          <td><input type="checkbox" class="form-check-input template-checkbox" data-id="${t.id}"></td>
+          <td>${i + 1}</td>
+          <td>${t.id}</td>
+          <td>${t.name}</td>
+          <td>${new Date(t.lastUpdated).toLocaleString()}</td>
+        </tr>
+      `).join('');
+
+      document.getElementById('results').innerHTML = `
+        <div class="d-flex gap-3">
+          <button class="btn btn-outline-danger" id="deleteSelected">🧹 Delete Selection (Memory)</button>
+          <span id="totalCount" class="badge bg-secondary d-flex align-items-center">Total: ${templates.length}</span>
+          <button class="btn btn-danger" id="deleteFromGHL">🚨 Delete from GHL</button>
+          <span id="ghlDeleteCount" class="badge bg-danger d-flex align-items-center">GHL Deleted: ${ghlDeletedCount}</span>
+        </div>
+
+        <table class="templatesTable table table-bordered table-striped mt-4">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="selectAll"></th>
+              <th>#</th>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Last Updated</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+
+      document.getElementById('selectAll').addEventListener('change', (e) => {
+        document.querySelectorAll('.template-checkbox').forEach(cb => cb.checked = e.target.checked);
+      });
+
+      document.getElementById('deleteSelected').addEventListener('click', () => {
+        const selectedIds = Array.from(document.querySelectorAll('.template-checkbox:checked')).map(cb => cb.dataset.id);
+        templates = templates.filter(t => !selectedIds.includes(t.id));
+        renderTable();
+      });
+
+      document.getElementById('deleteFromGHL').addEventListener('click', async () => {
+        const locationId = document.getElementById('locationId').value.trim();
+        const authToken = document.getElementById('authToken').value.trim();
+        const delay = parseInt(document.getElementById('delay').value) * 1000 || 2000;
+        const selectedIds = Array.from(document.querySelectorAll('.template-checkbox:checked')).map(cb => cb.dataset.id);
+
+        for (let i = 0; i < selectedIds.length; i++) {
+          const id = selectedIds[i];
+          try {
+            const res = await fetch(`https://services.leadconnectorhq.com/emails/builder/${locationId}/${id}`, {
+              method: 'DELETE',
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+                Version: '2021-07-28',
+                Accept: 'application/json'
+              }
+            });
+            const result = await res.json();
+            if (result) {
+              templates = templates.filter(t => t.id !== id);
+              ghlDeletedCount++;
+              renderTable();
+            }
+          } catch (err) {
+            console.error('Failed to delete:', id, err);
+          }
+          await new Promise(res => setTimeout(res, delay));
+        }
+        alert('GHL Deletion complete!');
+      });
+    }
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      templates = [];
+      ghlDeletedCount = 0;
+      document.getElementById('results').innerHTML = '';
+    });
+  </script>
+</body>
+
+</html>
